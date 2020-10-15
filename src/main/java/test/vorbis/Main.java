@@ -6,8 +6,10 @@ import org.lwjgl.system.MemoryUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_decode_memory;
+import static org.lwjgl.stb.STBVorbis.stb_vorbis_open_memory;
 
 public class Main
 {
@@ -23,14 +25,18 @@ public class Main
 		final var rawAudioBuffer = stb_vorbis_decode_memory(encodedData, channelsBuffer, sampleRateBuffer);
 
 		// Another way with decoder : same result.
-		// final var vorbisAlloc = STBVorbisAlloc.mallocStack(stack);
-		// final IntBuffer errorBuffer = stack.mallocInt(1);
-		// final long decoder = stb_vorbis_open_memory(encodedData, errorBuffer, vorbisAlloc);
-		// final int error = stb_vorbis_get_error(decoder);
+		final IntBuffer errorBuffer = stack.mallocInt(1);
+		final var decoder = stb_vorbis_open_memory(encodedData, errorBuffer, null);
+		final int error = errorBuffer.get();
+
+		if (decoder == 0)
+		{
+			System.err.println("stb_vorbis_open_memory returned null, error code: " + error);
+		}
 
 		if (rawAudioBuffer == null)
 		{
-			throw new AssertionError("stb_vorbis_decode_memory returned null");
+			System.err.println("stb_vorbis_decode_memory returned null");
 		}
 	}
 
@@ -46,7 +52,7 @@ public class Main
 		}
 		catch (final Exception e)
 		{
-			throw new AssertionError("Cannot read file");
+			throw new AssertionError("Cannot read file (don't launch it with Intellij, there is a bug with module resources. Use gradle launch configuration)");
 		}
 	}
 
